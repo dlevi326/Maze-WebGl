@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+
+<html>
+    <head>
+        <title>Rubiks Cube -- David Levi</title>
+    </head>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+
+    attribute  vec4 vPosition;
+    attribute  vec4 vColor;
+    varying vec4 fColor;
+
+    uniform mat4 projection;
+    uniform mat4 model;
+    uniform mat4 translate;
+
+    void main()
+    {
+    vec4 p;
+
+    gl_Position = projection * model * vPosition;
+    fColor = vColor;
+    }
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+    precision mediump float;
+
+    varying vec4 fColor;
+
+    void main() {
+        gl_FragColor = fColor;
+    }
+</script>
+
+<script type="text/javascript" src="./common/webgl-utilsFinal.js"></script>
+<script type="text/javascript" src="./common/initShadersFinal.js"></script>
+<script type="text/javascript" src="./common/MVfinal.js"></script>
+<script type="text/javascript" src="maze.js"></script>
+
+<body>
+    <h1>Maze</h1>
+    <div class="jumbotron" id="jumbotron">
+        <p class="lead">Save current state     
+            <h1>MAZE!!!!</h1>
+        </p>
+    </div>
+<div class="row">
+    <div class="col-md-5">
+       
+        <canvas id="gl-canvas" width="512" height="512">
+        Oops ... your browser doesn't support the HTML5 canvas element
+        </canvas>
+    </div>
+</div>
+
+</body>
+</html>
