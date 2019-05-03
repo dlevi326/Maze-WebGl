@@ -1,5 +1,5 @@
 // TODO
-// - Work on loading and saving the cube
+// - Work on getting maze of 1s and 0s
 
 
 "use strict";
@@ -54,51 +54,16 @@ var isMoving = false;
 var savedMoves = [];
 var savedDirs = [];
 
-function maze(x, y) {
-    var n = x * y - 1;
-    var verti,here,path,unvisited,next;
-    if (n < 0) {
-       alert("illegal maze dimensions");
-       return;
-    }
-    var horiz = [];
-    for (var j = 0; j < x + 1; j++) horiz[j] = [];
-        verti = [];
-    for (var j = 0; j < y + 1; j++) verti[j] = [],
-       here = [Math.floor(Math.random() * x), Math.floor(Math.random() * y)],
-       path = [here],
-       unvisited = [];
-    for (var j = 0; j < x + 2; j++) {
-       unvisited[j] = [];
-       for (var k = 0; k < y + 1; k++)
-          unvisited[j].push(j > 0 && j < x + 1 && k > 0 && (j != here[0] + 1 || k != here[1] + 1));
-    }
-    while (0 < n) {
-       var potential = [
-          [here[0] + 1, here[1]],
-          [here[0], here[1] + 1],
-          [here[0] - 1, here[1]],
-          [here[0], here[1] - 1]
-       ];
-       var neighbors = [];
-       for (var j = 0; j < 4; j++)
-          if (unvisited[potential[j][0] + 1][potential[j][1] + 1])
-             neighbors.push(potential[j]);
-       if (neighbors.length) {
-          n = n - 1;
-          next = neighbors[Math.floor(Math.random() * neighbors.length)];
-          unvisited[next[0] + 1][next[1] + 1] = false;
-          if (next[0] == here[0])
-             horiz[next[0]][(next[1] + here[1] - 1) / 2] = true;
-          else
-             verti[(next[0] + here[0] - 1) / 2][next[1]] = true;
-          path.push(here = next);
-       } else
-          here = path.pop();
-    }
-    return { x: x, y: y, horiz: horiz, verti: verti };
- }
-
+var MAZE1 =[[0,0,0,0,0,1,0,0,0,0],
+            [0,0,0,0,0,1,0,0,0,0],
+            [0,0,1,1,1,1,0,0,0,0],
+            [0,0,1,0,0,0,0,0,0,0],
+            [0,0,1,0,0,0,0,0,0,0],
+            [0,0,1,1,1,0,0,0,0,0],
+            [0,0,0,0,1,0,0,0,0,0],
+            [0,0,0,0,1,1,0,0,0,0],
+            [0,0,0,0,0,1,0,0,0,0],
+            [0,0,0,0,0,1,0,0,0,0]];
 
 var mouseDown = function( e ) {
     dragging = true;
@@ -124,6 +89,8 @@ var mouseMove = function( e ) {
     oldY = e.pageY;
     e.preventDefault();
 };
+
+
 
 
 
@@ -165,18 +132,8 @@ window.onload = function init()
 
     thetaLoc = gl.getUniformLocation(program, "theta");
 
-    var mazer = maze(10,10);
-    
-    for(var i=0;i<10;i++){
-        var word = "";
-        for(var j=0;j<10;j++){
-            word+=mazer.horiz[j];
-        }
-        console.log(word);
-    }
-    console.log(maze(10,10));
-
     drawSurface();
+    createMaze(MAZE1);
 
     //event listeners for buttons
 
@@ -199,6 +156,12 @@ window.onload = function init()
             case 'd':
                 executeD();
                 break;
+            case 'r':
+                executeR();
+                break;
+            case 'f':
+                executeF();
+                break;
             default:
                 break;
         }
@@ -208,8 +171,44 @@ window.onload = function init()
     render();
 }
 
+var size = 0.1;
+var blockSize = 0.5;
 
+// Assuming maze is 10*10
+var wallTranslations = [];
+var wallPoints = [];
+var wallColors = [];
+var createMaze = function(maze){
+    var blockUnit = 1;
+    var width = blockSize-size; // Width of surface
+    var height = size*100; // Length of surface
 
+    for(var i=0;i<maze.length;i++){
+        for(var j=0;j<maze[i].length;j++){
+            console.log('*')
+            wallTranslations.push(translate((height-blockSize-(blockSize*(i*2))),blockSize,blockSize-size))
+        }
+    }
+
+    /*wallTranslations = [
+        translate(width-size, size*2, 0)
+    ]*/
+
+    quad( 1, 0, 3, 2, 1, true ); // Black face
+    quad( 2, 3, 7, 6, 0, true ); // Red face
+    quad( 3, 0, 4, 7, 3, true ); // Yellow face
+    quad( 6, 5, 1, 2, 2, true ); // Green face
+    quad( 4, 5, 6, 7, 4, true); // Blue
+    quad( 5, 4, 0, 1, 5, true ); // Magenta
+
+    wallPoints.push(points);
+    wallColors.push(colors);
+    points = [];
+    colors = [];
+
+}
+
+var surfacePoints, surfaceColors;
 function drawSurface()
 {   
     
@@ -220,35 +219,44 @@ function drawSurface()
     quad( 6, 5, 1, 2, 3 ); // Green face
     quad( 4, 5, 6, 7, 0); // Blue
     quad( 5, 4, 0, 1, 0 ); // Magenta
+
+    surfacePoints = points;
+    points = [];
+    surfaceColors = colors;
+    colors = [];
     
 }
 
 
-var size = 0.1;
-function quad(a, b, c, d, color)
+//var size = 0.1;
+function quad(a, b, c, d, color,isWall=false)
 {
+    if(isWall){
+        size = blockSize;
+        var vertices = [
+            vec4( -size, -size,  size, 1.0 ),
+            vec4( -size,  size,  size, 1.0 ),
+            vec4(  size,  size,  size, 1.0 ),
+            vec4( size, -size,  size, 1.0 ),
+            vec4( -size, -size, -size, 1.0 ),
+            vec4( -size, size, -size, 1.0 ),
+            vec4(  size,  size, -size, 1.0 ),
+            vec4(  size, -size, -size, 1.0 )
+        ];
+    }
+    else{
 
-    /*var vertices = [
-        vec4( -size, -size,  size, 1.0 ),
-        vec4( -size,  size,  size, 1.0 ),
-        vec4(  size,  size,  size, 1.0 ),
-        vec4( size, -size,  size, 1.0 ),
-        vec4( -size, -size, -size, 1.0 ),
-        vec4( -size, size, -size, 1.0 ),
-        vec4(  size,  size, -size, 1.0 ),
-        vec4(  size, -size, -size, 1.0 )
-    ];*/
-
-    var vertices = [
-        vec4( -size, -size,  size*100, 1.0 ),
-        vec4( -size,  size,  size*100, 1.0 ),
-        vec4(  size*100,  size,  size*100, 1.0 ),
-        vec4( size*100, -size,  size*100, 1.0 ),
-        vec4( -size, -size, -size, 1.0 ),
-        vec4( -size, size, -size, 1.0 ),
-        vec4(  size*100,  size, -size, 1.0 ),
-        vec4(  size*100, -size, -size, 1.0 )
-    ];
+        var vertices = [
+            vec4( -size, -size,  size*100, 1.0 ),
+            vec4( -size,  size,  size*100, 1.0 ),
+            vec4(  size*100,  size,  size*100, 1.0 ),
+            vec4( size*100, -size,  size*100, 1.0 ),
+            vec4( -size, -size, -size, 1.0 ),
+            vec4( -size, size, -size, 1.0 ),
+            vec4(  size*100,  size, -size, 1.0 ),
+            vec4(  size*100, -size, -size, 1.0 )
+        ];
+    }
 
     var vertexColors = [
         [ 0.0, 0.0, 0.0, 1.0 ],  // black
@@ -312,10 +320,10 @@ function moveCube(){
 }
 
 
-var camSpeed = 0.05;
+var camSpeed = blockSize/2;
 var cam1=0,cam2=0,cam3=0;
 function executeW(){
-    cam1 += camSpeed;
+    cam1 -= camSpeed;
     //cam2 += camSpeed;
     //cam3 += camSpeed;
 }
@@ -325,7 +333,7 @@ function executeA(){
     cam3 += camSpeed;
 }
 function executeS(){
-    cam1 -= camSpeed;
+    cam1 += camSpeed;
     //cam2 += camSpeed;
     //cam3 += camSpeed;
 }
@@ -334,86 +342,21 @@ function executeD(){
     //cam2 += camSpeed;
     cam3 -= camSpeed;
 }
+function executeR(){
+    //cam1 += camSpeed;
+    //cam2 += camSpeed;
+    cam2 += camSpeed;
+}
+function executeF(){
+    //cam1 += camSpeed;
+    //cam2 += camSpeed;
+    cam2 -= camSpeed;
+}
 
 function moveCamera(){
     modelMatrix = mult(modelMatrix,translate(cam1, cam2, cam3));
+    //projectionMatrix = mult(projectionMatrix,translate(cam1,cam2,cam3));
 }
-
-
-
-
-
-
-var dist = (size + .1) + .01;
-var translations = [
-    // +/-
-    // move right/left, up/down , move back/front
-    
-    translate(-dist, dist, -dist),
-    translate(0, dist, -dist),
-    translate(dist,dist,-dist),
-    translate(-dist,0,-dist),
-    translate(0 ,0, -dist),
-    translate(dist,0,-dist),
-    translate(-dist,-dist,-dist),
-    translate(0,-dist,-dist),
-    translate(dist,-dist,-dist),
-
-    translate(-dist,dist,0),
-    translate(0,dist,0),
-    translate(dist,dist,0),
-    translate(-dist,0,0),
-    translate(0,0,0),
-    translate(dist,0,0),
-    translate(-dist,-dist,0),
-    translate(0,-dist,0),
-    translate(dist,-dist,0),
-
-    translate(-dist,dist,dist),
-    translate(0,dist,dist),
-    translate(dist,dist,dist),
-    translate(-dist,0,dist),
-    translate(0,0,dist),
-    translate(dist,0,dist),
-    translate(-dist,-dist,dist),
-    translate(0,-dist,dist),
-    translate(dist,-dist,dist)
-]
-const origTrans = [
-    // +/-
-    // move right/left, up/down , move back/front
-    
-    translate(-dist, dist, -dist),
-    translate(0, dist, -dist),
-    translate(dist,dist,-dist),
-    translate(-dist,0,-dist),
-    translate(0 ,0, -dist),
-    translate(dist,0,-dist),
-    translate(-dist,-dist,-dist),
-    translate(0,-dist,-dist),
-    translate(dist,-dist,-dist),
-
-    translate(-dist,dist,0),
-    translate(0,dist,0),
-    translate(dist,dist,0),
-    translate(-dist,0,0),
-    translate(0,0,0),
-    translate(dist,0,0),
-    translate(-dist,-dist,0),
-    translate(0,-dist,0),
-    translate(dist,-dist,0),
-
-    translate(-dist,dist,dist),
-    translate(0,dist,dist),
-    translate(dist,dist,dist),
-    translate(-dist,0,dist),
-    translate(0,0,dist),
-    translate(dist,0,dist),
-    translate(-dist,-dist,dist),
-    translate(0,-dist,dist),
-    translate(dist,-dist,dist)
-];
-
 
 
 
@@ -428,9 +371,19 @@ function render()
     
     moveCube();
 
-    modelMatrix = mult(modelMatrix,translate(-0.5,0,-0.5))
-
+    //modelMatrix = mult(modelMatrix,translate(-10,-0.55,-0.5))
+    modelMatrix = mult(modelMatrix,translate(0,-1,-blockSize))
     moveCamera();
+
+
+    
+    var projectionMatrix = mat4();
+    
+
+    projectionMatrix = mult(projectionMatrix,perspective(45.0, canvas.width / canvas.height, 1, 100.0));
+    projectionMatrix = mult(projectionMatrix,translate(0,0,-2));
+    gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
+    
 
 
     
@@ -442,13 +395,13 @@ function render()
     
 
     gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(colors), gl.STATIC_DRAW );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(surfaceColors), gl.STATIC_DRAW );
 
     gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vColor );
 
     gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(surfacePoints), gl.STATIC_DRAW );
 
     gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vPosition );
@@ -456,11 +409,56 @@ function render()
     gl.drawArrays( gl.TRIANGLES, 0, NumVertices);
     
 
+
+
+
     
+    // Additional points
+    for(var i=0;i<wallTranslations.length;i++){
+        var modelMatrixNew;
+        modelMatrixNew = mult(modelMatrix,wallTranslations[i])
+        gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrixNew));
+
+        
+
+        gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
+        gl.bufferData( gl.ARRAY_BUFFER, flatten(wallColors[0]), gl.STATIC_DRAW );
+
+        gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
+        gl.enableVertexAttribArray( vColor );
+
+        gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
+        gl.bufferData( gl.ARRAY_BUFFER, flatten(wallPoints[0]), gl.STATIC_DRAW );
+
+        gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
+        gl.enableVertexAttribArray( vPosition );
+
+        gl.drawArrays( gl.TRIANGLES, 0, NumVertices);
+    }
+
+    /*var modelMatrixNew;
+    modelMatrixNew = mult(modelMatrix,wallTranslations[0])
+    gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrixNew));
 
     
 
-    //gl.drawArrays( gl.TRIANGLES, 0, NumVertices);
+    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(wallColors[0]), gl.STATIC_DRAW );
+
+    gl.vertexAttribPointer( vColor, 4, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vColor );
+
+    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(wallPoints[0]), gl.STATIC_DRAW );
+
+    gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vPosition );
+
+    gl.drawArrays( gl.TRIANGLES, 0, NumVertices);*/
+
+    
+
+
 
     requestAnimFrame( render );
     
