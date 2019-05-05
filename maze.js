@@ -1,5 +1,5 @@
 // TODO
-// - Work on getting collisions working
+// - Create Texturing
 
 
 "use strict";
@@ -55,14 +55,14 @@ var savedMoves = [];
 var savedDirs = [];
 
 var MAZE1 =[[0,0,0,0,0,1,0,0,0,0],
-            [0,0,0,0,0,1,0,0,0,0],
-            [0,0,1,1,1,1,0,0,0,0],
-            [0,0,1,0,0,0,0,0,0,0],
-            [0,0,1,0,0,0,0,0,0,0],
-            [0,0,1,1,1,0,0,0,0,0],
-            [0,0,0,0,1,0,0,0,0,0],
-            [0,0,0,0,1,1,0,0,0,0],
-            [0,0,0,0,0,1,0,0,0,0],
+            [0,0,0,0,0,1,0,1,0,0],
+            [0,1,1,1,1,1,1,1,1,0],
+            [0,0,1,0,0,0,0,0,1,0],
+            [0,0,1,0,0,0,1,0,0,0],
+            [0,0,1,1,1,0,1,1,1,0],
+            [0,0,0,0,1,0,0,0,1,0],
+            [0,1,1,1,1,1,1,1,1,0],
+            [0,1,0,1,0,1,0,0,1,0],
             [0,0,0,0,0,1,0,0,0,0]];
 
 var mouseDown = function( e ) {
@@ -161,6 +161,22 @@ window.onload = function init()
                 break;
             case 'f':
                 executeF();
+                break;
+            default:
+                break;
+        }
+        switch(event.keyCode){
+            case 37:
+                executeLeft();
+                break;
+            case 38:
+                executeUp();
+                break;
+            case 39:
+                executeRight();
+                break;
+            case 40:
+                executeDown();
                 break;
             default:
                 break;
@@ -321,65 +337,128 @@ function moveCube(){
     modelMatrix[2][2] = modelMatrix[2][2] * c - mv8 * s;
 
 }
-
-var colx=0,coly=0,colz=0;
-function detectCollision(maze){
-    var hitbox=0.1;
-    for(var i=0;i<maze.length;i++){
-        for(var j=0;j<maze[i].length;j++){
-            if(maze[i][j]==0){ // Wall present
-                if((colx<j+hitbox && coly>j-hitbox) || (coly<i+hitbox && coly>i-hitbox) ){
-                    //console.log('COLLISION!!!');
-                    console.log(colx)
-                }
-            }
+var hitDistance = 3;
+var curCollisionDist;
+function checkCollision(points){
+    var center = mat4(0);
+    //console.log(hitDistance);
+    //var hitDistance = 5;
+    collisionExists = false;
+    for(var i=0;i<points.length;i++){
+        var dist = length(subtract(points[i],center));
+        if(dist<hitDistance){
+            collisionExists = true;
+            //console.log('Collision Distance: ',dist);
+            curCollisionDist = dist;
         }
     }
+    
+    
+    return collisionExists;
 }
 
 
 var camSpeed = blockSize/2;
+var rotAngle = 10;
+var curAngle = 0;
 var cam1=0,cam2=0,cam3=0;
+var collisionExists;
+var collisionPoints;
+var lastPressed;
 function executeW(){
-    cam1 -= camSpeed;
-    coly += camSpeed;
+    
+    
+    //cam1 -= camSpeed;
     //cam2 += camSpeed;
     //cam3 += camSpeed;
+    console.log(curAngle)
+    cam1 -= camSpeed*Math.cos(radians(curAngle));
+    cam3 += camSpeed*Math.sin(radians(curAngle)); 
+
+    
+    lastPressed = 'W';
 }
 function executeA(){
     //cam1 += camSpeed;
     //cam2 += camSpeed;
-    cam3 += camSpeed;
-    colx -= camSpeed;
+    cam3 += camSpeed*Math.cos(radians(curAngle));
+    cam1 += camSpeed*Math.sin(radians(curAngle));
+    
+    lastPressed = 'A';
+
 }
 function executeS(){
-    cam1 += camSpeed;
+    
+    //cam1 += camSpeed;
     //cam2 += camSpeed;
     //cam3 += camSpeed;
-    coly -= camSpeed;
+    cam1 += camSpeed*Math.cos(radians(curAngle));
+    cam3 -= camSpeed*Math.sin(radians(curAngle)); 
+
+    
+    lastPressed = 'S';
+    
 }
 function executeD(){
     //cam1 += camSpeed;
     //cam2 += camSpeed;
-    cam3 -= camSpeed;
-    colx += camSpeed;
+
+    //cam3 -= camSpeed;
+    cam3 -= camSpeed*Math.cos(radians(curAngle));
+    cam1 -= camSpeed*Math.sin(radians(curAngle));
+    
+    lastPressed = 'D';
+    
 }
 function executeR(){
     //cam1 += camSpeed;
     //cam2 += camSpeed;
     cam2 += camSpeed;
+    
+    
 }
 function executeF(){
     //cam1 += camSpeed;
     //cam2 += camSpeed;
     cam2 -= camSpeed;
+    
+    
+}
+function executeLeft(){
+    curAngle+=rotAngle;
+}
+function executeRight(){
+    curAngle-=rotAngle;
 }
 
 function moveCamera(){
+    modelMatrix = mult(modelMatrix,rotateY(curAngle));
     modelMatrix = mult(modelMatrix,translate(cam1, cam2, cam3));
+   
     //projectionMatrix = mult(projectionMatrix,translate(cam1,cam2,cam3));
+    if(checkCollision(collisionPoints)){
+        switch(lastPressed){
+            case 'W':
+                cam1 += camSpeed*Math.cos(radians(curAngle));
+                cam3 -= camSpeed*Math.sin(radians(curAngle)); 
+                break;
+            case 'A':
+                cam3 -= camSpeed*Math.cos(radians(curAngle));
+                cam1 -= camSpeed*Math.sin(radians(curAngle));
+                break;
+            case 'S':
+                cam1 -= camSpeed*Math.cos(radians(curAngle));
+                cam3 += camSpeed*Math.sin(radians(curAngle)); 
+                break;
+            case 'D':
+                cam3 += camSpeed*Math.cos(radians(curAngle));
+                cam1 += camSpeed*Math.sin(radians(curAngle));
+                break;
+            default:
+                break;
+        }
+    }
 }
-
 
 
 
@@ -397,7 +476,9 @@ function render()
 
     //modelMatrix = mult(modelMatrix,translate(-10,-0.55,-0.5))
     //modelMatrix = mult(modelMatrix,translate(0,-1,-blockSize))
-    modelMatrix = mult(modelMatrix,translate(0,-1,-4))
+    
+    modelMatrix = mult(modelMatrix,translate(0,-2,-4))
+    
     
 
 
@@ -407,7 +488,9 @@ function render()
 
     projectionMatrix = mult(projectionMatrix,perspective(45.0, canvas.width / canvas.height, 1, 100.0));
     projectionMatrix = mult(projectionMatrix,translate(0,0,-2));
-    projectionMatrix = mult(projectionMatrix,translate(0,0,0));
+    projectionMatrix = mult(projectionMatrix,rotateY(10));
+    projectionMatrix = mult(projectionMatrix,rotateX(-60));
+    
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
     
 
@@ -440,7 +523,7 @@ function render()
 
     
     // Additional points
-    var collisionPoints = [];
+    collisionPoints = [];
     for(var i=0;i<wallTranslations.length;i++){
         var modelMatrixNew;
         modelMatrixNew = mult(modelMatrix,wallTranslations[i])
@@ -463,20 +546,16 @@ function render()
 
         gl.drawArrays( gl.TRIANGLES, 0, NumVertices);
     }
-    for(var i=0;i<collisionPoints.length;i++){
-        if(collisionPoints[i][0][0]<.1 && collisionPoints[i][0][0]>-0.1){
-            //console.log('COLLISION!!');
-        }
-        if(collisionPoints[i][0][1]<.1 && collisionPoints[i][0][1]>-0.1){
-            //console.log('COLLISION!!');
-        }
-        if(collisionPoints[i][0][2]<.1 && collisionPoints[i][0][2]>-0.1){
-            //console.log('COLLISION!!');
-        }
-    }
-    detectCollision(MAZE1);
+
+    // Check for collision
+    collisionExists = checkCollision(collisionPoints);
+    
     moveCube();
     moveCamera();
+    
+    
+    
+    //console.log(length(projectionMatrix))
 
     /*var modelMatrixNew;
     modelMatrixNew = mult(modelMatrix,wallTranslations[0])
