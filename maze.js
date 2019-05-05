@@ -1,5 +1,5 @@
 // TODO
-// - Work on getting maze of 1s and 0s
+// - Work on getting collisions working
 
 
 "use strict";
@@ -171,8 +171,8 @@ window.onload = function init()
     render();
 }
 
-var size = 0.1;
-var blockSize = 0.5;
+var size = 0.4;
+var blockSize = 1.5;
 
 // Assuming maze is 10*10
 var wallTranslations = [];
@@ -180,13 +180,16 @@ var wallPoints = [];
 var wallColors = [];
 var createMaze = function(maze){
     var blockUnit = 1;
-    var width = blockSize-size; // Width of surface
+    var width = size*100; // Width of surface
     var height = size*100; // Length of surface
 
     for(var i=0;i<maze.length;i++){
         for(var j=0;j<maze[i].length;j++){
             console.log('*')
-            wallTranslations.push(translate((height-blockSize-(blockSize*(i*2))),blockSize,blockSize-size))
+            //wallTranslations.push(translate((height-blockSize-(blockSize*(i*2))),blockSize+size,blockSize-size))
+            if(maze[i][j]==0){
+                wallTranslations.push(translate(height-blockSize-(blockSize*i*2),blockSize+size,width-blockSize-(j*2*blockSize)))
+            }
         }
     }
 
@@ -319,11 +322,27 @@ function moveCube(){
 
 }
 
+var colx=0,coly=0,colz=0;
+function detectCollision(maze){
+    var hitbox=0.1;
+    for(var i=0;i<maze.length;i++){
+        for(var j=0;j<maze[i].length;j++){
+            if(maze[i][j]==0){ // Wall present
+                if((colx<j+hitbox && coly>j-hitbox) || (coly<i+hitbox && coly>i-hitbox) ){
+                    //console.log('COLLISION!!!');
+                    console.log(colx)
+                }
+            }
+        }
+    }
+}
+
 
 var camSpeed = blockSize/2;
 var cam1=0,cam2=0,cam3=0;
 function executeW(){
     cam1 -= camSpeed;
+    coly += camSpeed;
     //cam2 += camSpeed;
     //cam3 += camSpeed;
 }
@@ -331,16 +350,19 @@ function executeA(){
     //cam1 += camSpeed;
     //cam2 += camSpeed;
     cam3 += camSpeed;
+    colx -= camSpeed;
 }
 function executeS(){
     cam1 += camSpeed;
     //cam2 += camSpeed;
     //cam3 += camSpeed;
+    coly -= camSpeed;
 }
 function executeD(){
     //cam1 += camSpeed;
     //cam2 += camSpeed;
     cam3 -= camSpeed;
+    colx += camSpeed;
 }
 function executeR(){
     //cam1 += camSpeed;
@@ -364,16 +386,19 @@ function moveCamera(){
 
 
 
+
+
 function render()
 {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     
-    moveCube();
+    
 
     //modelMatrix = mult(modelMatrix,translate(-10,-0.55,-0.5))
-    modelMatrix = mult(modelMatrix,translate(0,-1,-blockSize))
-    moveCamera();
+    //modelMatrix = mult(modelMatrix,translate(0,-1,-blockSize))
+    modelMatrix = mult(modelMatrix,translate(0,-1,-4))
+    
 
 
     
@@ -382,6 +407,7 @@ function render()
 
     projectionMatrix = mult(projectionMatrix,perspective(45.0, canvas.width / canvas.height, 1, 100.0));
     projectionMatrix = mult(projectionMatrix,translate(0,0,-2));
+    projectionMatrix = mult(projectionMatrix,translate(0,0,0));
     gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
     
 
@@ -414,9 +440,11 @@ function render()
 
     
     // Additional points
+    var collisionPoints = [];
     for(var i=0;i<wallTranslations.length;i++){
         var modelMatrixNew;
         modelMatrixNew = mult(modelMatrix,wallTranslations[i])
+        collisionPoints.push(modelMatrixNew);
         gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrixNew));
 
         
@@ -435,6 +463,20 @@ function render()
 
         gl.drawArrays( gl.TRIANGLES, 0, NumVertices);
     }
+    for(var i=0;i<collisionPoints.length;i++){
+        if(collisionPoints[i][0][0]<.1 && collisionPoints[i][0][0]>-0.1){
+            //console.log('COLLISION!!');
+        }
+        if(collisionPoints[i][0][1]<.1 && collisionPoints[i][0][1]>-0.1){
+            //console.log('COLLISION!!');
+        }
+        if(collisionPoints[i][0][2]<.1 && collisionPoints[i][0][2]>-0.1){
+            //console.log('COLLISION!!');
+        }
+    }
+    detectCollision(MAZE1);
+    moveCube();
+    moveCamera();
 
     /*var modelMatrixNew;
     modelMatrixNew = mult(modelMatrix,wallTranslations[0])
