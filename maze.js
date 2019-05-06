@@ -96,9 +96,24 @@ var mouseMove = function( e ) {
     e.preventDefault();
 };
 
-function configureTexture( image ) {
+function configureTexture1( image ) {
     texture = gl.createTexture();
     gl.bindTexture( gl.TEXTURE_2D, texture );
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB,
+         gl.RGB, gl.UNSIGNED_BYTE, image );
+    gl.generateMipmap( gl.TEXTURE_2D );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
+                      gl.NEAREST_MIPMAP_LINEAR );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
+
+    gl.uniform1i(gl.getUniformLocation(program, "texture"), 0);
+}
+
+var texture2;
+function configureTexture2( image ) {
+    texture2 = gl.createTexture();
+    gl.bindTexture( gl.TEXTURE_2D, texture2 );
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB,
          gl.RGB, gl.UNSIGNED_BYTE, image );
@@ -147,9 +162,17 @@ window.onload = function init()
     vTexCoord = gl.getAttribLocation( program, "vTexCoord" );
     
 
-    var image = document.getElementById("texImage");
 
-    configureTexture( image );
+    var image1 = document.getElementById("ground");
+    configureTexture1( image1 );
+
+    var image2 = document.getElementById("bricks");
+    configureTexture2( image2 );
+
+    /*var image2 = document.getElementById("bricks");
+    configureTexture( image2 );*/
+    
+
     
     projectionMatrix = mat4();
     projectionMatrixLoc = gl.getUniformLocation(program, "projection");
@@ -261,12 +284,12 @@ function drawSurface()
 {   
     
     // 0 - black || 1 - red || 2 - yellow || 3 - green || 4 - blue || 5 - magenta || 6 - cyan || 7 - grey
-    quad( 1, 0, 3, 2, 0 ); // Black face
-    quad( 2, 3, 7, 6, 0 ); // Red face
-    quad( 3, 0, 4, 7, 0 ); // Yellow face
-    quad( 6, 5, 1, 2, 3 ); // Green face
-    quad( 4, 5, 6, 7, 0); // Blue
-    quad( 5, 4, 0, 1, 0 ); // Magenta
+    quad( 1, 0, 3, 2, 8 ); // Black face
+    quad( 2, 3, 7, 6, 8 ); // Red face
+    quad( 3, 0, 4, 7, 8 ); // Yellow face
+    quad( 6, 5, 1, 2, 8 ); // Green face
+    quad( 4, 5, 6, 7, 8); // Blue
+    quad( 5, 4, 0, 1, 8 ); // Magenta
 
     surfacePoints = points;
     points = [];
@@ -518,7 +541,7 @@ function render()
     modelMatrix = mult(modelMatrix,translate(0,-2,-4))
     
     
-
+    
 
     
     var projectionMatrix = mat4();
@@ -539,7 +562,8 @@ function render()
     //modelMatrixNew = mult(modelMatrix,translate(-dist, dist, -dist));
     gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrix));
 
-    
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
 
     gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, flatten(surfaceColors), gl.STATIC_DRAW );
@@ -565,7 +589,9 @@ function render()
     
 
 
-
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture2);
+    
 
     
     // Additional points
