@@ -1,5 +1,5 @@
 // TODO
-// - Create Texturing
+// - Create light sources
 
 
 "use strict";
@@ -18,6 +18,7 @@ var texSize = 64;
 var points = [];
 var colors = [];
 var texCoordsArray = [];
+var normalsArray = [];
 
 var thetaLoc;
 var theta = 2;
@@ -70,6 +71,19 @@ var MAZE1 =[[0,0,0,0,0,1,0,0,0,0],
             [0,1,1,1,1,1,1,1,1,0],
             [0,1,0,1,0,1,0,0,1,0],
             [0,0,0,0,0,1,0,0,0,0]];
+
+//var lightPosition = vec4(100.0, 0.0, 0.0, 0.0 );
+var lightPosition = vec4(100.0, 0.0, 0.0, 0.0 );
+var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
+var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+
+var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
+var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0);
+var materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
+var materialShininess = 100.0;
+
+var ambientColor, diffuseColor, specularColor;
 
 var mouseDown = function( e ) {
     dragging = true;
@@ -147,6 +161,10 @@ window.onload = function init()
     program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
 
+    
+
+    
+
     cBuffer = gl.createBuffer();
     
     vColor = gl.getAttribLocation( program, "vColor" );
@@ -187,12 +205,38 @@ window.onload = function init()
     drawSurface();
     createMaze(MAZE1);
 
+    var nBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(normalsArray), gl.STATIC_DRAW );
+
+    var vNormal = gl.getAttribLocation( program, "vNormal" );
+    gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vNormal );
+
+    var ambientProduct = mult(lightAmbient, materialAmbient);
+    var diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    var specularProduct = mult(lightSpecular, materialSpecular);
+
+    gl.uniform4fv(gl.getUniformLocation(program, "ambientProduct"),flatten(ambientProduct));
+    gl.uniform4fv(gl.getUniformLocation(program, "diffuseProduct"),flatten(diffuseProduct) );
+    gl.uniform4fv(gl.getUniformLocation(program, "specularProduct"),flatten(specularProduct) );
+    gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"),flatten(lightPosition) );
+    
+    gl.uniform1f(gl.getUniformLocation(program,"shininess"),materialShininess);
+
     //event listeners for buttons
 
     canvas.addEventListener("mousedown", mouseDown, false);
     canvas.addEventListener("mouseup", mouseUp, false);
     canvas.addEventListener("mouseout", mouseUp, false);
     canvas.addEventListener("mousemove", mouseMove, false);
+
+    window.addEventListener("keydown", function(e) {
+        // space and arrow keys
+        if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+            e.preventDefault();
+        }
+    }, false);
 
     document.addEventListener('keydown', function(event) {
         switch(event.key){
@@ -373,6 +417,17 @@ function quad(a, b, c, d, color,isWall=false)
     texCoordsArray.push(texCoord[0]);
     texCoordsArray.push(texCoord[2]);
     texCoordsArray.push(texCoord[3]);
+
+    var t1 = subtract(vertices[b], vertices[a]);
+    var t2 = subtract(vertices[c], vertices[b]);
+    var normal = cross(t1, t2);
+    var normal = vec3(normal);
+    normalsArray.push(normal);
+    normalsArray.push(normal);
+    normalsArray.push(normal);
+    normalsArray.push(normal);
+    normalsArray.push(normal);
+    normalsArray.push(normal);
     //console.log(points);
 }
 
@@ -427,6 +482,7 @@ function checkCollision(points){
 var camSpeed = blockSize/2;
 var rotAngle = 10;
 var curAngle = 0;
+var curAngle2 = 0;
 var cam1=0,cam2=0,cam3=0;
 var collisionExists;
 var collisionPoints;
@@ -496,10 +552,21 @@ function executeLeft(){
 function executeRight(){
     curAngle-=rotAngle;
 }
+function executeUp(){
+    curAngle2+=rotAngle
+}
+function executeDown(){
+    curAngle2-=rotAngle
+}
 
 function moveCamera(){
+    modelMatrix = mult(modelMatrix,rotateZ(curAngle2));
     modelMatrix = mult(modelMatrix,rotateY(curAngle));
+    
     modelMatrix = mult(modelMatrix,translate(cam1, cam2, cam3));
+    //lightPosition =  mult(lightPosition,rotateY(curAngle));
+    //lightPosition = mult(lightPosition,translate(cam1, cam2, cam3));
+    
    
     //projectionMatrix = mult(projectionMatrix,translate(cam1,cam2,cam3));
     if(checkCollision(collisionPoints)){
@@ -539,8 +606,6 @@ function render()
     //modelMatrix = mult(modelMatrix,translate(0,-1,-blockSize))
     
     modelMatrix = mult(modelMatrix,translate(0,-2,-4))
-    
-    
     
 
     
@@ -587,7 +652,6 @@ function render()
 
     gl.drawArrays( gl.TRIANGLES, 0, NumVertices);
     
-
 
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture2);
