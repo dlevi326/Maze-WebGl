@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
 
@@ -10,7 +11,10 @@
 
     attribute  vec4 vPosition;
     attribute  vec4 vColor;
+    attribute vec2 vTexCoord;
+
     varying vec4 fColor;
+    varying vec2 fTexCoord;
 
     uniform mat4 projection;
     uniform mat4 model;
@@ -22,6 +26,7 @@
 
     gl_Position = projection * model * vPosition;
     fColor = vColor;
+    fTexCoord = vTexCoord;
     }
 </script>
 
@@ -30,9 +35,12 @@
     precision mediump float;
 
     varying vec4 fColor;
+    varying vec2 fTexCoord;
+
+    uniform sampler2D texture;
 
     void main() {
-        gl_FragColor = fColor;
+        gl_FragColor = fColor * texture2D(texture, fTexCoord);
     }
 </script>
 
@@ -56,6 +64,7 @@
         </canvas>
     </div>
 </div>
-
+<img id = "texImage" src = "bricks256.png" hidden></img>
 </body>
 </html>
+

@@ -10,10 +10,14 @@ var gl;
 var projectionMatrix,projectionMatrixLoc;
 var modelMatrix, modelMatrixLoc;
 
+var program;
+
 var NumVertices  = 36;
+var texSize = 64;
 
 var points = [];
 var colors = [];
+var texCoordsArray = [];
 
 var thetaLoc;
 var theta = 2;
@@ -54,6 +58,8 @@ var isMoving = false;
 var savedMoves = [];
 var savedDirs = [];
 
+var texture;
+
 var MAZE1 =[[0,0,0,0,0,1,0,0,0,0],
             [0,0,0,0,0,1,0,1,0,0],
             [0,1,1,1,1,1,1,1,1,0],
@@ -90,10 +96,22 @@ var mouseMove = function( e ) {
     e.preventDefault();
 };
 
+function configureTexture( image ) {
+    texture = gl.createTexture();
+    gl.bindTexture( gl.TEXTURE_2D, texture );
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D( gl.TEXTURE_2D, 0, gl.RGB,
+         gl.RGB, gl.UNSIGNED_BYTE, image );
+    gl.generateMipmap( gl.TEXTURE_2D );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER,
+                      gl.NEAREST_MIPMAP_LINEAR );
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST );
+
+    gl.uniform1i(gl.getUniformLocation(program, "texture"), 0);
+}
 
 
-
-
+var tBuffer,vTexCoord;
 window.onload = function init()
 {
     canvas = document.getElementById( "gl-canvas" );
@@ -111,7 +129,7 @@ window.onload = function init()
     //
     //  Load shaders and initialize attribute buffers
     //
-    var program = initShaders( gl, "vertex-shader", "fragment-shader" );
+    program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
 
     cBuffer = gl.createBuffer();
@@ -121,6 +139,17 @@ window.onload = function init()
     vBuffer = gl.createBuffer();
     
     vPosition = gl.getAttribLocation( program, "vPosition" );
+
+
+    tBuffer = gl.createBuffer();
+    
+
+    vTexCoord = gl.getAttribLocation( program, "vTexCoord" );
+    
+
+    var image = document.getElementById("texImage");
+
+    configureTexture( image );
     
     projectionMatrix = mat4();
     projectionMatrixLoc = gl.getUniformLocation(program, "projection");
@@ -213,12 +242,12 @@ var createMaze = function(maze){
         translate(width-size, size*2, 0)
     ]*/
 
-    quad( 1, 0, 3, 2, 1, true ); // Black face
-    quad( 2, 3, 7, 6, 0, true ); // Red face
-    quad( 3, 0, 4, 7, 3, true ); // Yellow face
-    quad( 6, 5, 1, 2, 2, true ); // Green face
-    quad( 4, 5, 6, 7, 4, true); // Blue
-    quad( 5, 4, 0, 1, 5, true ); // Magenta
+    quad( 1, 0, 3, 2, 8, true ); // Black face
+    quad( 2, 3, 7, 6, 8, true ); // Red face
+    quad( 3, 0, 4, 7, 8, true ); // Yellow face
+    quad( 6, 5, 1, 2, 8, true ); // Green face
+    quad( 4, 5, 6, 7, 8, true); // Blue
+    quad( 5, 4, 0, 1, 8, true ); // Magenta
 
     wallPoints.push(points);
     wallColors.push(colors);
@@ -277,6 +306,13 @@ function quad(a, b, c, d, color,isWall=false)
         ];
     }
 
+    var texCoord = [
+        vec2(0, 0),
+        vec2(0, 1),
+        vec2(1, 1),
+        vec2(1, 0)
+    ];
+
     var vertexColors = [
         [ 0.0, 0.0, 0.0, 1.0 ],  // black
         [ 1.0, 0.0, 0.0, 1.0 ],  // red
@@ -285,7 +321,8 @@ function quad(a, b, c, d, color,isWall=false)
         [ 0.0, 0.0, 1.0, 1.0 ],  // blue
         [ 1.0, 0.0, 1.0, 1.0 ],  // magenta
         [ 0.0, 1.0, 1.0, 1.0 ],  // cyan
-        [ 0.5, 0.5, 0.5, 1.0 ]   // grey
+        [ 0.5, 0.5, 0.5, 1.0 ],   // grey
+        [ 1.0, 1.0, 1.0, 1.0 ]   // grey
     ];
 
     // We need to parition the quad into two triangles in order for
@@ -307,6 +344,12 @@ function quad(a, b, c, d, color,isWall=false)
         colors.push(vertexColors[color]);
 
     }
+    texCoordsArray.push(texCoord[0]);
+    texCoordsArray.push(texCoord[1]);
+    texCoordsArray.push(texCoord[2]);
+    texCoordsArray.push(texCoord[0]);
+    texCoordsArray.push(texCoord[2]);
+    texCoordsArray.push(texCoord[3]);
     //console.log(points);
 }
 
@@ -462,11 +505,6 @@ function moveCamera(){
 
 
 
-
-
-
-
-
 function render()
 {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -514,6 +552,14 @@ function render()
 
     gl.vertexAttribPointer( vPosition, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vPosition );
+
+    gl.bindBuffer( gl.ARRAY_BUFFER, tBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(texCoordsArray), gl.STATIC_DRAW );
+
+    gl.vertexAttribPointer( vTexCoord, 2, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vTexCoord );
+
+    
 
     gl.drawArrays( gl.TRIANGLES, 0, NumVertices);
     

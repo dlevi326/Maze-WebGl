@@ -1,1 +1,9 @@
+*.jpg
+*.docx
+textureCube1.html
+textureCube1.js
 .DS_Store
+*.png
+*.gif
+*.json
+/node_modules/
