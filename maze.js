@@ -62,7 +62,7 @@ var savedDirs = [];
 var texture;
 
 var MAZE1 =[[0,0,0,0,0,1,0,0,0,0],
-            [0,0,0,0,0,1,0,1,0,0],
+            [0,0,1,0,0,1,0,1,0,0],
             [0,1,1,1,1,1,1,1,1,0],
             [0,0,1,0,0,0,0,0,1,0],
             [0,0,1,0,0,0,1,0,0,0],
@@ -71,6 +71,29 @@ var MAZE1 =[[0,0,0,0,0,1,0,0,0,0],
             [0,1,1,1,1,1,1,1,1,0],
             [0,1,0,1,0,1,0,0,1,0],
             [0,0,0,0,0,1,0,0,0,0]];
+
+var MAZE2 = [[0,0,0,0,0,0,0,1,0,0],
+             [0,1,1,1,0,0,0,1,1,0],
+             [0,1,0,1,1,1,0,0,1,0],
+             [0,1,0,0,0,1,1,1,1,0],
+             [0,1,1,1,0,1,0,0,0,0],
+             [0,1,0,1,0,1,1,0,1,0],
+             [0,1,0,0,0,0,1,0,1,0],
+             [0,1,1,0,0,0,0,0,1,0],
+             [0,0,1,1,1,1,1,1,1,0],
+             [0,0,1,0,0,0,0,0,0,0]]
+
+var MAZE3 = [[0,0,0,1,0,0,0,0,0,0],
+             [0,1,1,1,0,1,1,1,1,0],
+             [0,1,0,0,0,0,0,0,1,0],
+             [0,1,0,1,0,1,1,1,1,0],
+             [0,1,0,1,0,1,0,1,0,0],
+             [0,1,1,1,0,1,0,0,0,0],
+             [0,1,0,0,0,1,1,1,1,0],
+             [0,1,1,1,1,1,0,0,1,0],
+             [0,0,1,0,1,0,0,1,1,0],
+             [0,0,0,0,0,0,0,0,1,0]]
+
 
 //var lightPosition = vec4(100.0, 0.0, 0.0, 0.0 );
 var lightPosition = vec4(100.0, 0.0, 0.0, 0.0 );
@@ -141,6 +164,7 @@ function configureTexture2( image ) {
 
 
 var tBuffer,vTexCoord;
+var flag = true;
 window.onload = function init()
 {
     canvas = document.getElementById( "gl-canvas" );
@@ -203,7 +227,10 @@ window.onload = function init()
     thetaLoc = gl.getUniformLocation(program, "theta");
 
     drawSurface();
-    createMaze(MAZE1);
+
+    var mazes = [MAZE1, MAZE2, MAZE3];
+    var numMaze = Math.floor(Math.random() * mazes.length);
+    createMaze(mazes[numMaze]);
 
     var nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
@@ -258,6 +285,12 @@ window.onload = function init()
             case 'f':
                 executeF();
                 break;
+            case 'v':
+                topView();
+                break;
+            case 'b':
+                regView();
+                break;
             default:
                 break;
         }
@@ -274,9 +307,25 @@ window.onload = function init()
             case 40:
                 executeDown();
                 break;
+            case 16:
+                if(flag){
+                    topView();
+                    flag = false;
+                }
+                else{
+                    regView();
+                    flag=true;
+                }
             default:
                 break;
         }
+    
+    /*document.addEventListener('keyup', function(event) {
+        if(event.keyCode==16){
+            regView();
+        }
+        
+    });*/
     });
     
 
@@ -292,8 +341,8 @@ var wallPoints = [];
 var wallColors = [];
 var createMaze = function(maze){
     var blockUnit = 1;
-    var width = size*100; // Width of surface
-    var height = size*100; // Length of surface
+    var width = size*100-5; // Width of surface
+    var height = size*100-5; // Length of surface
 
     for(var i=0;i<maze.length;i++){
         for(var j=0;j<maze[i].length;j++){
@@ -557,6 +606,31 @@ function executeUp(){
 }
 function executeDown(){
     curAngle2-=rotAngle
+}
+
+var prevCams = [0,0,0,0,0];
+function topView(){
+    prevCams[0] = cam1;
+    prevCams[1] = cam2;
+    prevCams[2] = cam3;
+    prevCams[3] = curAngle2;
+    prevCams[4] = curAngle;
+    cam1 = -23; // up/down
+    cam2 = -42; // In/out
+    cam3 = -15;
+    curAngle2 = -85;
+    curAngle = 0;
+
+}
+function regView(){
+    
+    cam1 = prevCams[0];
+    cam2 = prevCams[1];
+    cam3 = prevCams[2];
+    curAngle2 = prevCams[3];
+    curAngle = prevCams[4];
+    
+    console.log(curAngle2)
 }
 
 function moveCamera(){
