@@ -71,6 +71,8 @@ var MAZE1 =[[0,0,0,0,0,1,0,0,0,0],
             [0,1,1,1,1,1,1,1,1,0],
             [0,1,0,1,0,1,0,0,1,0],
             [0,0,0,0,0,1,0,0,0,0]];
+// Start, End
+var mazeStartEnd1 = [[9,5],[0,5]];
 
 var MAZE2 = [[0,0,0,0,0,0,0,1,0,0],
              [0,1,1,1,0,0,0,1,1,0],
@@ -81,7 +83,8 @@ var MAZE2 = [[0,0,0,0,0,0,0,1,0,0],
              [0,1,0,0,0,0,1,0,1,0],
              [0,1,1,0,0,0,0,0,1,0],
              [0,0,1,1,1,1,1,1,1,0],
-             [0,0,1,0,0,0,0,0,0,0]]
+             [0,0,1,0,0,0,0,0,0,0]];
+var mazeStartEnd2 = [[9,2],[0,7]];
 
 var MAZE3 = [[0,0,0,1,0,0,0,0,0,0],
              [0,1,1,1,0,1,1,1,1,0],
@@ -92,7 +95,9 @@ var MAZE3 = [[0,0,0,1,0,0,0,0,0,0],
              [0,1,0,0,0,1,1,1,1,0],
              [0,1,1,1,1,1,0,0,1,0],
              [0,0,1,0,1,0,0,1,1,0],
-             [0,0,0,0,0,0,0,0,1,0]]
+             [0,0,0,0,0,0,0,0,1,0]];
+var mazeStartEnd3 = [[9,8],[0,3]];
+var startEnd = [mazeStartEnd1,mazeStartEnd2,mazeStartEnd3];
 
 
 //var lightPosition = vec4(100.0, 0.0, 0.0, 0.0 );
@@ -107,6 +112,65 @@ var materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
 var materialShininess = 100.0;
 
 var ambientColor, diffuseColor, specularColor;
+
+
+
+var count = 0; 
+var clearTime; 
+var seconds = 0, minutes = 0, hours = 0; 
+var clearState; 
+var secs, mins, gethours ; 
+var timerRun;
+function startWatch( ) { /* check if seconds is equal to 60 and add a +1 to minutes, and set seconds to 0 */ 
+    if ( seconds === 60 ) { 
+        seconds = 0; minutes = minutes + 1; 
+    } /* you use the javascript tenary operator to format how the minutes should look and add 0 to minutes if less than 10 */ 
+    mins = ( minutes < 10 ) ? ( '0' + minutes + ': ' ) : ( minutes + ': ' ); /* check if minutes is equal to 60 and add a +1 to hours set minutes to 0 */ 
+    if ( minutes === 60 ) { 
+        minutes = 0; 
+        hours = hours + 1; 
+    } /* you use the javascript tenary operator to format how the hours should look and add 0 to hours if less than 10 */ 
+    gethours = ( hours < 10 ) ? ( '0' + hours + ': ' ) : ( hours + ': ' ); 
+    secs = ( seconds < 10 ) ? ( '0' + seconds ) : ( seconds ); // display the stopwatch 
+    var x = document .getElementById("timer"); 
+    x.innerHTML = '<str>Time Start!<str><br>Time: ' + gethours + mins + secs+'</br>'; /* call the seconds counter after displaying the stop watch and increment seconds by +1 to keep it counting */ 
+    seconds++; /* call the setTimeout( ) to keep the stop watch alive ! */ 
+    clearTime = setTimeout( "startWatch( )", 1000 ); 
+} // startWatch( ) //create a function to start the stop watch 
+function startTime( ) { /* check if seconds, minutes, and hours are equal to zero and start the stop watch */ 
+    if ( seconds === 0 && minutes === 0 && hours === 0 ) { /* hide the fulltime when the stop watch is running */ 
+    var fulltime = document.getElementById( "fulltime" ); 
+    fulltime.style.display = "none"; /* hide the start button if the stop watch is running */ 
+    //this.style.display = "none"; /* call the startWatch( ) function to execute the stop watch whenever the startTime( ) is triggered */ 
+    timerRun=true;
+    startWatch( ); 
+    } // if () 
+} // startTime() /* you need to bind the startTime( ) function to any event type to keep the stop watch alive ! */ 
+//create a function to stop the time 
+function stopTime( ) { /* check if seconds, minutes and hours are not equal to 0 */ 
+    if ( seconds !== 0 || minutes !== 0 || hours !== 0 ) { /* display the full time before reseting the stop watch */ 
+        var fulltime = document .getElementById( "fulltime" ); //display the full time 
+        fulltime.style.display = "block"; 
+        var time = gethours + mins + secs; fulltime.innerHTML = 'Completed maze in: ' + time; // reset the stop watch 
+        seconds = 0; minutes = 0; hours = 0; secs = '0' + seconds; mins = '0' + minutes + ': '; gethours = '0' + hours + ': '; /* display the stopwatch after it's been stopped */ 
+        var x = document.getElementById ("timer"); var stopTime = gethours + mins + secs; x.innerHTML = stopTime; /* display all stop watch control buttons */ 
+        var showStart = document.getElementById ('start'); 
+        showStart.style.display = "inline-block"; 
+        var showStop = document.getElementById ("stop"); 
+        showStop.style.display = "inline-block"; /* clear the stop watch using the setTimeout( ) return value 'clearTime' as ID */ 
+        clearTimeout( clearTime ); 
+    } // if () 
+} // stopTime() /* you need to call the stopTime( ) function to terminate the stop watch */ 
+window.addEventListener( 'load', function ( ) { 
+    var stop = document.getElementById ("stop"); 
+    stop.addEventListener( 'click', stopTime ); 
+}); // stopwatch.js end 
+window.addEventListener( 'load', function ( ) { 
+    var start = document .getElementById("start"); 
+    start.addEventListener( 'click', startTime ); 
+}); // startwatch.js end 
+
+
 
 var mouseDown = function( e ) {
     dragging = true;
@@ -165,6 +229,7 @@ function configureTexture2( image ) {
 
 var tBuffer,vTexCoord;
 var flag = true;
+var numMaze;
 window.onload = function init()
 {
     canvas = document.getElementById( "gl-canvas" );
@@ -229,7 +294,7 @@ window.onload = function init()
     drawSurface();
 
     var mazes = [MAZE1, MAZE2, MAZE3];
-    var numMaze = Math.floor(Math.random() * mazes.length);
+    numMaze = Math.floor(Math.random() * mazes.length);
     createMaze(mazes[numMaze]);
 
     var nBuffer = gl.createBuffer();
@@ -339,15 +404,29 @@ var blockSize = 1.5;
 var wallTranslations = [];
 var wallPoints = [];
 var wallColors = [];
+
+var startingTranslation;
+var endingTranslation;
 var createMaze = function(maze){
     var blockUnit = 1;
     var width = size*100-5; // Width of surface
     var height = size*100-5; // Length of surface
 
+    var starter = startEnd[numMaze][0];
+    var ender = startEnd[numMaze][1];
+
     for(var i=0;i<maze.length;i++){
         for(var j=0;j<maze[i].length;j++){
-            console.log('*')
+            //console.log(j,i)
             //wallTranslations.push(translate((height-blockSize-(blockSize*(i*2))),blockSize+size,blockSize-size))
+            if(i == starter[0] && j==starter[1]){
+                console.log('Beginning at:',j,',',i);
+                startingTranslation = translate(height-blockSize-(blockSize*i*2),blockSize+size,width-blockSize-(j*2*blockSize));
+            }
+            if(i == ender[0] && j==ender[1]){
+                console.log('Ending at:',j,',',i);
+                endingTranslation = translate(height-blockSize-(blockSize*i*2),blockSize+size,width-blockSize-(j*2*blockSize));
+            }
             if(maze[i][j]==0){
                 wallTranslations.push(translate(height-blockSize-(blockSize*i*2),blockSize+size,width-blockSize-(j*2*blockSize)))
             }
@@ -543,9 +622,8 @@ function executeW(){
     //cam2 += camSpeed;
     //cam3 += camSpeed;
 
-    console.log(elapsed)
-    cam1 -= camSpeed*Math.cos(radians(curAngle))*elapsed;
-    cam3 += camSpeed*Math.sin(radians(curAngle))*elapsed; 
+    cam1 -= camSpeed*Math.cos(radians(curAngle));
+    cam3 += camSpeed*Math.sin(radians(curAngle)); 
     
     lastPressed = 'W';
 }
@@ -633,6 +711,32 @@ function regView(){
     console.log(curAngle2)
 }
 
+var startPoint,endPoint;
+function checkStartTimer(){
+    var center = mat4(0);
+
+    console.log(length(subtract(startPoint,center)));
+    
+    if(length(subtract(startPoint,center))<hitDistance){
+        console.log('Start');
+        startTime();
+    }
+    if(length(subtract(endPoint,center))<hitDistance){
+        console.log('End');
+        stopTime();
+    }
+
+    /*collisionExists = false;
+    for(var i=0;i<points.length;i++){
+        var dist = length(subtract(points[i],center));
+        if(dist<hitDistance){
+            collisionExists = true;
+            //console.log('Collision Distance: ',dist);
+            curCollisionDist = dist;
+        }
+    }*/
+}
+
 function moveCamera(){
     modelMatrix = mult(modelMatrix,rotateZ(curAngle2));
     modelMatrix = mult(modelMatrix,rotateY(curAngle));
@@ -662,6 +766,7 @@ function moveCamera(){
                 break;
         }
     }
+    checkStartTimer();
 }
 
 
@@ -727,7 +832,8 @@ function render()
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture2);
     
-
+    startPoint = mult(modelMatrix,startingTranslation);
+    endPoint = mult(modelMatrix,endingTranslation);
     
     // Additional points
     collisionPoints = [];
@@ -735,6 +841,7 @@ function render()
         var modelMatrixNew;
         modelMatrixNew = mult(modelMatrix,wallTranslations[i])
         collisionPoints.push(modelMatrixNew);
+
         gl.uniformMatrix4fv(modelMatrixLoc, false, flatten(modelMatrixNew));
 
         
