@@ -96,7 +96,7 @@ var MAZE3 = [[0,0,0,1,0,0,0,0,0,0],
 
 
 //var lightPosition = vec4(100.0, 0.0, 0.0, 0.0 );
-var lightPosition = vec4(100.0, 0.0, 0.0, 0.0 );
+var lightPosition = vec4(-10.0, 0.0, 0.0, 1.0 );
 var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
 var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
 var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
@@ -542,10 +542,10 @@ function executeW(){
     //cam1 -= camSpeed;
     //cam2 += camSpeed;
     //cam3 += camSpeed;
-    console.log(curAngle)
-    cam1 -= camSpeed*Math.cos(radians(curAngle));
-    cam3 += camSpeed*Math.sin(radians(curAngle)); 
 
+    console.log(elapsed)
+    cam1 -= camSpeed*Math.cos(radians(curAngle))*elapsed;
+    cam3 += camSpeed*Math.sin(radians(curAngle))*elapsed; 
     
     lastPressed = 'W';
 }
@@ -638,11 +638,8 @@ function moveCamera(){
     modelMatrix = mult(modelMatrix,rotateY(curAngle));
     
     modelMatrix = mult(modelMatrix,translate(cam1, cam2, cam3));
-    //lightPosition =  mult(lightPosition,rotateY(curAngle));
-    //lightPosition = mult(lightPosition,translate(cam1, cam2, cam3));
     
-   
-    //projectionMatrix = mult(projectionMatrix,translate(cam1,cam2,cam3));
+
     if(checkCollision(collisionPoints)){
         switch(lastPressed){
             case 'W':

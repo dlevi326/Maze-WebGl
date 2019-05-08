@@ -4,7 +4,7 @@
 
 <html>
     <head>
-        <title>Rubiks Cube -- David Levi</title>
+        <title>3D Maze -- David Levi</title>
     </head>
 
 <script id="vertex-shader" type="x-shader/x-vertex">
@@ -34,7 +34,10 @@
     //fixed light postion
     
     vec3 light = lightPosition.xyz;
-    vec3 L = normalize( light - pos );
+    //vec3 L = normalize( light - pos );
+    vec3 L;
+    if(lightPosition.w == 0.0) L = normalize((model * lightPosition).xyz);
+    else L = normalize( (model * lightPosition - vPosition).xyz );
 
 	
     vec3 E = normalize( -pos );
@@ -95,7 +98,8 @@
     </div>
 <div class="row">
     <div class="col-md-5">
-        WSAD to move
+        Use the WSAD keys to move
+        <br>Use the arrow keys to look around</br>
         <br>Use shift key to view maze top down</br>
     </div>
     <div class="col-md-5">
