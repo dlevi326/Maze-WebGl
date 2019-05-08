@@ -97,6 +97,7 @@ var MAZE3 = [[0,0,0,1,0,0,0,0,0,0],
              [0,0,1,0,1,0,0,1,1,0],
              [0,0,0,0,0,0,0,0,1,0]];
 var mazeStartEnd3 = [[9,8],[0,3]];
+
 var startEnd = [mazeStartEnd1,mazeStartEnd2,mazeStartEnd3];
 
 
@@ -121,6 +122,7 @@ var seconds = 0, minutes = 0, hours = 0;
 var clearState; 
 var secs, mins, gethours ; 
 var timerRun;
+var topScores = [10000,10000,10000];
 function startWatch( ) { /* check if seconds is equal to 60 and add a +1 to minutes, and set seconds to 0 */ 
     if ( seconds === 60 ) { 
         seconds = 0; minutes = minutes + 1; 
@@ -151,7 +153,21 @@ function stopTime( ) { /* check if seconds, minutes and hours are not equal to 0
     if ( seconds !== 0 || minutes !== 0 || hours !== 0 ) { /* display the full time before reseting the stop watch */ 
         var fulltime = document .getElementById( "fulltime" ); //display the full time 
         fulltime.style.display = "block"; 
-        var time = gethours + mins + secs; fulltime.innerHTML = 'Completed maze in: ' + time; // reset the stop watch 
+        var time = gethours + mins + secs; 
+        var actualTime = hours*3600+minutes*60+seconds;
+        if(actualTime<topScores[0]){
+            topScores[2] = topScores[1];
+            topScores[1] = topScores[0];
+            topScores[0] = actualTime;
+        }
+        else if(actualTime<topScores[1]){
+            topScores[2] = topScores[1];
+            topScores[1] = actualTime;
+        }
+        else if(actualTime<topScores[2]){
+            topScores[2] = actualTime;
+        }
+        fulltime.innerHTML = 'Completed maze in: ' + time+'<br>Top times are:</br><ol><li>'+topScores[0]+' seconds</li><li>'+topScores[1]+' seconds</li><li>'+topScores[2]+' seconds</li></ol></br>'; // reset the stop watch 
         seconds = 0; minutes = 0; hours = 0; secs = '0' + seconds; mins = '0' + minutes + ': '; gethours = '0' + hours + ': '; /* display the stopwatch after it's been stopped */ 
         var x = document.getElementById ("timer"); var stopTime = gethours + mins + secs; x.innerHTML = stopTime; /* display all stop watch control buttons */ 
         var showStart = document.getElementById ('start'); 
@@ -330,6 +346,8 @@ window.onload = function init()
         }
     }, false);
 
+    
+    
     document.addEventListener('keydown', function(event) {
         switch(event.key){
             case 'w':
@@ -385,12 +403,6 @@ window.onload = function init()
                 break;
         }
     
-    /*document.addEventListener('keyup', function(event) {
-        if(event.keyCode==16){
-            regView();
-        }
-        
-    });*/
     });
     
 
@@ -420,11 +432,11 @@ var createMaze = function(maze){
             //console.log(j,i)
             //wallTranslations.push(translate((height-blockSize-(blockSize*(i*2))),blockSize+size,blockSize-size))
             if(i == starter[0] && j==starter[1]){
-                console.log('Beginning at:',j,',',i);
+                //console.log('Beginning at:',j,',',i);
                 startingTranslation = translate(height-blockSize-(blockSize*i*2),blockSize+size,width-blockSize-(j*2*blockSize));
             }
             if(i == ender[0] && j==ender[1]){
-                console.log('Ending at:',j,',',i);
+                //console.log('Ending at:',j,',',i);
                 endingTranslation = translate(height-blockSize-(blockSize*i*2),blockSize+size,width-blockSize-(j*2*blockSize));
             }
             if(maze[i][j]==0){
@@ -708,14 +720,14 @@ function regView(){
     curAngle2 = prevCams[3];
     curAngle = prevCams[4];
     
-    console.log(curAngle2)
+    //console.log(curAngle2)
 }
 
 var startPoint,endPoint;
 function checkStartTimer(){
     var center = mat4(0);
 
-    console.log(length(subtract(startPoint,center)));
+    //(length(subtract(startPoint,center)));
     
     if(length(subtract(startPoint,center))<hitDistance){
         console.log('Start');
